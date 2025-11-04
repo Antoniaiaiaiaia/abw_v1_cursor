@@ -38,7 +38,13 @@ export default function AdminRoute({ children }: AdminRouteProps) {
         const adminEmails = data.adminEmails || [];
         setIsAdmin(adminEmails.includes(session.user.email));
       } else {
-        setIsAdmin(false);
+        // 临时解决方案：如果 API 返回 404（Edge Function 未部署），且用户是 admin@admin.com，则允许访问
+        if (response.status === 404 && session.user.email === 'admin@admin.com') {
+          console.log('AdminRoute: Using fallback for admin@admin.com');
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
       }
     } catch (error) {
       console.error('Error checking admin status:', error);

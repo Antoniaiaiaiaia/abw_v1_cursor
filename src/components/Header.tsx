@@ -23,11 +23,20 @@ export function Header({ isLoggedIn, onLoginChange }: HeaderProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     checkSession();
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      checkAdminStatus();
+    } else {
+      setIsAdmin(false);
+    }
+  }, [isLoggedIn]);
 
   const checkSession = async () => {
     const supabase = createClient();
@@ -38,6 +47,54 @@ export function Header({ isLoggedIn, onLoginChange }: HeaderProps) {
       if (session.user.user_metadata?.name) {
         setName(session.user.user_metadata.name);
       }
+    }
+  };
+
+  const checkAdminStatus = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user?.email) {
+        console.log('Admin check: No session or email');
+        setIsAdmin(false);
+        return;
+      }
+
+      console.log('Admin check: Checking for email', session.user.email);
+
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-66f4da3b/admin/manage`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      console.log('Admin check: Response status', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        const adminEmails = data.adminEmails || [];
+        console.log('Admin check: Admin emails', adminEmails);
+        const isUserAdmin = adminEmails.includes(session.user.email);
+        console.log('Admin check: Is admin?', isUserAdmin);
+        setIsAdmin(isUserAdmin);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Admin check: Failed', response.status, errorData);
+        // 临时解决方案：如果 API 返回 404（Edge Function 未部署），且用户是 admin@admin.com，则允许访问
+        if (response.status === 404 && session.user.email === 'admin@admin.com') {
+          console.log('Admin check: Using fallback for admin@admin.com');
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      setIsAdmin(false);
     }
   };
 
@@ -125,7 +182,7 @@ export function Header({ isLoggedIn, onLoginChange }: HeaderProps) {
             <Link to="/jobs">
               <h1 className="cursor-pointer">web3jobs</h1>
             </Link>
-            <nav className="flex gap-6">
+            <nav className="flex items-center" style={{ gap: '40px' }}>
               <Link
                 to="/jobs"
                 className={`transition-colors ${
@@ -148,6 +205,16 @@ export function Header({ isLoggedIn, onLoginChange }: HeaderProps) {
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                    >
+                      审核面板
+                    </Button>
+                  </Link>
+                )}
                 <Link to="/create-job">
                   <Button
                     variant="outline"

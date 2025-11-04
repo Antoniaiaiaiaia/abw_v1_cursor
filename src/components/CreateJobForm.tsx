@@ -102,7 +102,6 @@ export function CreateJobForm() {
         return;
       }
 
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       const jobData = {

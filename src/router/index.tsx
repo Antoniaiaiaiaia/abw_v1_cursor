@@ -1,9 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
-import JobsList from '../components/JobsList';
-import TalentsList from '../components/TalentsList';
-import CreateJobForm from '../components/CreateJobForm';
-import CreateProfileForm from '../components/CreateProfileForm';
+import { JobsList } from '../components/JobsList';
+import { TalentsList } from '../components/TalentsList';
+import { CreateJobForm } from '../components/CreateJobForm';
+import { CreateProfileForm } from '../components/CreateProfileForm';
 import JobDetail from '../pages/JobDetail';
 import TalentDetail from '../pages/TalentDetail';
 import Settings from '../pages/Settings';

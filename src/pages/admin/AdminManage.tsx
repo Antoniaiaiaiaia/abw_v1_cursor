@@ -40,10 +40,39 @@ export default function AdminManage() {
       if (response.ok) {
         const data = await response.json();
         setAdminEmails(data.adminEmails || []);
+      } else {
+        let errorMessage = 'Failed to load admins';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const error = await response.json();
+            errorMessage = error.error || errorMessage;
+            console.error('Load admins error:', error);
+          } else {
+            const text = await response.text();
+            console.error('Load admins error (non-JSON):', text);
+            if (response.status === 404) {
+              errorMessage = '后端 API 未部署。请先部署 Supabase Edge Function。';
+            } else {
+              errorMessage = `Failed to load admins (Status: ${response.status})`;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          if (response.status === 404) {
+            errorMessage = '后端 API 未部署。请先部署 Supabase Edge Function。';
+          } else {
+            errorMessage = `Failed to load admins (Status: ${response.status})`;
+          }
+        }
+        toast.error(errorMessage);
+        setAdminEmails([]); // 清空列表，避免显示过时的数据
       }
     } catch (error) {
       console.error('Error loading admins:', error);
-      toast.error('Failed to load admins');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load admins';
+      toast.error(errorMessage);
+      setAdminEmails([]); // 清空列表，避免显示过时的数据
     } finally {
       setLoading(false);
     }
@@ -77,17 +106,43 @@ export default function AdminManage() {
         }
       );
 
+      console.log('Add admin response status:', response.status);
+
       if (response.ok) {
         toast.success('Admin added successfully');
         setNewEmail('');
         await loadAdmins();
       } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to add admin');
+        let errorMessage = 'Failed to add admin';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const error = await response.json();
+            errorMessage = error.error || errorMessage;
+            console.error('Add admin error:', error);
+          } else {
+            const text = await response.text();
+            console.error('Add admin error (non-JSON):', text);
+            if (response.status === 404) {
+              errorMessage = '后端 API 未部署。请先部署 Supabase Edge Function。';
+            } else {
+              errorMessage = `Failed to add admin (Status: ${response.status})`;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          if (response.status === 404) {
+            errorMessage = '后端 API 未部署。请先部署 Supabase Edge Function。';
+          } else {
+            errorMessage = `Failed to add admin (Status: ${response.status})`;
+          }
+        }
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Error adding admin:', error);
-      toast.error('Failed to add admin');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add admin';
+      toast.error(errorMessage);
     } finally {
       setIsAdding(false);
     }
